@@ -30,7 +30,7 @@ namespace BangazonAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get([FromQuery] string q)
         {
             using (SqlConnection conn = Connection)
             {
@@ -38,7 +38,16 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"SELECT Id, FirstName, LastName, CreatedDate, Active, Address, City, State, Email, Phone 
-                                        FROM Customer";
+                                        FROM Customer
+                                        WHERE 1 = 1";
+
+                    if (q != null)
+                    {
+                        cmd.CommandText += " AND FirstName Like @q ";
+                        cmd.CommandText += " OR LastName Like @q";
+                        cmd.Parameters.Add(new SqlParameter("@q", "%" + q + "%"));
+                    }
+
                     SqlDataReader reader = cmd.ExecuteReader();
                     List<Customer> customers = new List<Customer>();
 
