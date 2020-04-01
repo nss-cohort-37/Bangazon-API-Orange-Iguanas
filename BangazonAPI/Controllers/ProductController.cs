@@ -30,7 +30,7 @@ namespace BangazonAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get([FromQuery] string q)
         {
             using (SqlConnection conn = Connection)
             {
@@ -38,7 +38,16 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"SELECT Id, ProductTypeId, CustomerId, Price, Description, Title, DateAdded
-                                        FROM Product";
+                                        FROM Product
+                                        WHERE 1 = 1";
+
+                    if (q != null)
+                    {
+                        cmd.CommandText += " AND Title Like @q ";
+                        cmd.Parameters.Add(new SqlParameter("@q", "%" + q + "%"));
+                    }
+
+
                     SqlDataReader reader = cmd.ExecuteReader();
                     List<Product> products = new List<Product>();
 
