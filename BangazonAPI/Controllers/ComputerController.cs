@@ -33,7 +33,7 @@ namespace BangazonAPI.Controllers
 
         [HttpGet]
         public async Task<IActionResult> Get(
-           [FromQuery] string available)
+                  [FromQuery] string available)
         {
             if (available != "true" && available != "false")
             {
@@ -236,23 +236,23 @@ namespace BangazonAPI.Controllers
             }
         }
 
+
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Computer computer
-            )
+        public async Task<IActionResult> Post([FromBody] Computer computer)
         {
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO Computer (PurchaseDate, DecomissionDate Make, Model)
+
+                    cmd.CommandText = @"INSERT INTO Computer (PurchaseDate, Make, Model)
                                         OUTPUT INSERTED.Id
-                                        VALUES (@purchaseDate,  @make, @model)";
-                    cmd.Parameters.Add(new SqlParameter("@purchaseDate", computer.PurchaseDate));
-                    cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
+                                        VALUES (@purchaseDate, @make, @model)";
+                    cmd.Parameters.Add(new SqlParameter("@purchaseDate", DateTime.Now.ToString("MM/dd/yyyy hh:mm tt")));
+                    //cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
                     cmd.Parameters.Add(new SqlParameter("@make", computer.Make));
                     cmd.Parameters.Add(new SqlParameter("@model", computer.Model));
-
 
                     int newId = (int)cmd.ExecuteScalar();
                     computer.Id = newId;
@@ -260,6 +260,7 @@ namespace BangazonAPI.Controllers
                 }
             }
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Put([FromRoute] int id, [FromBody] Computer computer)
@@ -273,9 +274,9 @@ namespace BangazonAPI.Controllers
                     {
                         cmd.CommandText = @"UPDATE Computer
                                             SET PurchaseDate = @purchaseDate,
-                                                DecomissionDate = @decomissionDate
+                                                DecomissionDate = @decomissionDate,
                                            
-                                                Make = @make
+                                                Make = @make,
                                                 Model = @model
                                             WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@purchaseDate", computer.PurchaseDate));
