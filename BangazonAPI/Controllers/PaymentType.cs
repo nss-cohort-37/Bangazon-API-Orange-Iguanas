@@ -76,7 +76,7 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, Name
+                        SELECT Id, Name, Active
                         FROM PaymentType
                         WHERE Id = @id";
 
@@ -90,7 +90,8 @@ namespace BangazonAPI.Controllers
                         paymentType = new PaymentType
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            Name = reader.GetString(reader.GetOrdinal("Name"))
+                            Name = reader.GetString(reader.GetOrdinal("Name")),
+                            Active = reader.GetBoolean(reader.GetOrdinal("Active"))
                         };
                         reader.Close();
 
@@ -116,11 +117,12 @@ namespace BangazonAPI.Controllers
                 {
                     cmd.CommandText = @"
                                         INSERT 
-                                        INTO PaymentType (Name)
+                                        INTO PaymentType (Name, Active)
                                         OUTPUT INSERTED.Id
-                                        VALUES (@name)";
+                                        VALUES (@name, @active)";
 
                     cmd.Parameters.Add(new SqlParameter("@name", paymentType.Name));
+                    cmd.Parameters.Add(new SqlParameter("@active", paymentType.Active));
 
                     int newId = (int)cmd.ExecuteScalar();
                     paymentType.Id = newId;
@@ -130,52 +132,10 @@ namespace BangazonAPI.Controllers
         }
 
 
-        // Update single paymentType by id from database
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PUT([FromRoute] int id, [FromBody] PaymentType paymentType)
-        {
-            try
-            {
-                using (SqlConnection conn = Connection)
-                {
-                    conn.Open();
-                    using (SqlCommand cmd = conn.CreateCommand())
-                    {
-                        cmd.CommandText = @"
-                                            UPDATE PaymentType
-                                            SET 
-                                            Name = @name
-                                            WHERE Id = @id";
+        // Soft delete of paymentType, setting active to false.
 
-                        cmd.Parameters.Add(new SqlParameter("@name", paymentType.Name));
-                        cmd.Parameters.Add(new SqlParameter("@id", id));
-
-                        int rowsAffected = cmd.ExecuteNonQuery();
-                        if (rowsAffected > 0)
-                        {
-                            return new StatusCodeResult(StatusCodes.Status204NoContent);
-                        }
-                        throw new Exception("No rows were effected");
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                if (!PaymentTypeExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-        }
-
-
-        //Delete paymentType by id from database
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DELETE([FromRoute] int id)
+        public async Task<IActionResult> Delete([FromRoute] int id)
         {
             try
             {
@@ -184,10 +144,11 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"DELETE 
-                                            FROM PaymentType
+                        cmd.CommandText = @"UPDATE PaymentType
+                                            SET Active = @active
                                             WHERE Id = @id";
 
+                        cmd.Parameters.Add(new SqlParameter("@Active", false));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         int rowsAffected = cmd.ExecuteNonQuery();
@@ -195,7 +156,7 @@ namespace BangazonAPI.Controllers
                         {
                             return new StatusCodeResult(StatusCodes.Status204NoContent);
                         }
-                        throw new Exception("No rows were affected");
+                        throw new Exception("No rows affected");
                     }
                 }
             }
@@ -211,6 +172,8 @@ namespace BangazonAPI.Controllers
                 }
             }
         }
+
+
 
 
         // Check to see if paymentType exists by id in database
