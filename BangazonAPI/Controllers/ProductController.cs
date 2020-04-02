@@ -45,7 +45,7 @@ namespace BangazonAPI.Controllers
 
                     if (q != null)
                     {
-                        cmd.CommandText += " AND Title Like @q ";
+                        cmd.CommandText += " AND Title LIKE @q OR Description LIKE @q";
                         cmd.Parameters.Add(new SqlParameter("@q", "%" + q + "%"));
                     }
 
