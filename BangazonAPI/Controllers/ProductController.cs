@@ -135,7 +135,7 @@ namespace BangazonAPI.Controllers
                     cmd.Parameters.Add(new SqlParameter("@price", product.Price));
                     cmd.Parameters.Add(new SqlParameter("@description", product.Description));
                     cmd.Parameters.Add(new SqlParameter("@title", product.Title));
-                    cmd.Parameters.Add(new SqlParameter("@dateAdded", product.DateAdded));
+                    cmd.Parameters.Add(new SqlParameter("@dateAdded", DateTime.Now));
 
 
                     int newId = (int)cmd.ExecuteScalar();
