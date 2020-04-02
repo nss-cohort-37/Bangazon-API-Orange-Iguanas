@@ -12,11 +12,11 @@ namespace BangazonAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class DepartmentController : ControllerBase
+    public class TrainingProgramController : ControllerBase
     {
         private readonly IConfiguration _config;
 
-        public DepartmentController(IConfiguration config)
+        public TrainingProgramController(IConfiguration config)
         {
             _config = config;
         }
@@ -30,7 +30,8 @@ namespace BangazonAPI.Controllers
         }
 
 
-        // Get all departments from the database
+        // GET all upcomming trainingPrograms from the database
+       
         [HttpGet]
         public async Task<IActionResult> GET()
         {
@@ -40,34 +41,37 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                                        SELECT Id, Name, Budget
-                                        FROM Department
+                                        SELECT Id, Name, StartDate, EndDate, MaxAttendees
+                                        FROM TrainingProgram
                                         ";
 
                     SqlDataReader reader = cmd.ExecuteReader();
-                    var departments = new List<Department>();
+                    var trainingPrograms = new List<TrainingProgram>();
 
                     while (reader.Read())
                     {
-                        var department = new Department
+                        var trainingProgram = new TrainingProgram
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             Name = reader.GetString(reader.GetOrdinal("Name")),
-                            Budget = reader.GetInt32(reader.GetOrdinal("Budget"))
+                            StartDate = reader.GetDateTime(reader.GetOrdinal("StartDate")),
+                            EndDate = reader.GetDateTime(reader.GetOrdinal("EndDate")),
+                            MaxAttendees = reader.GetInt32(reader.GetOrdinal("MaxAttendees")
                         };
 
-                        departments.Add(department);
+                        trainingPrograms.Add(trainingProgram);
                     }
                     reader.Close();
 
-                    return Ok(departments);
+                    return Ok(trainingPrograms);
                 }
             }
         }
 
 
-        // Get a single department by Id from database
-        [HttpGet("{id}", Name = "GetDepartment")]
+        // GET a single trainingProgram by Id from database
+
+        [HttpGet("{id}", Name = "GetTrainingProgram")]
         public async Task<IActionResult> GET([FromRoute] int id)
         {
             using (SqlConnection conn = Connection)
@@ -77,24 +81,26 @@ namespace BangazonAPI.Controllers
                 {
                     cmd.CommandText = @"
                         SELECT Id, Name, Budget
-                        FROM Department
+                        FROM TrainingProgram
                         WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
-                    Department department = null;
+                    TrainingProgram trainingProgram = null;
 
                     if (reader.Read())
                     {
-                        department = new Department
+                        trainingProgram = new TrainingProgram
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             Name = reader.GetString(reader.GetOrdinal("Name")),
-                            Budget = reader.GetInt32(reader.GetOrdinal("Budget"))
+                            StartDate = reader.GetDateTime(reader.GetOrdinal("StartDate")),
+                            EndDate = reader.GetDateTime(reader.GetOrdinal("EndDate")),
+                            MaxAttendees = reader.GetInt32(reader.GetOrdinal("MaxAttendees")
                         };
                         reader.Close();
 
-                        return Ok(department);
+                        return Ok(trainingProgram);
                     }
                     else
                     {
@@ -105,9 +111,9 @@ namespace BangazonAPI.Controllers
         }
 
 
-        // Create departments and add them to database
+        // POST  -- Add training program to database
         [HttpPost]
-        public async Task<IActionResult> POST([FromBody] Department department)
+        public async Task<IActionResult> POST([FromBody] TrainingProgram trainingProgram)
         {
             using (SqlConnection conn = Connection)
             {
@@ -116,23 +122,50 @@ namespace BangazonAPI.Controllers
                 {
                     cmd.CommandText = @"
                                         INSERT 
-                                        INTO Department (Name, Budget)
+                                        INTO TrainingProgram (Name, Budget)
                                         OUTPUT INSERTED.Id
                                         VALUES (@name, @budget)";
-                    cmd.Parameters.Add(new SqlParameter("@name", department.Name));
-                    cmd.Parameters.Add(new SqlParameter("@budget", department.Budget));
+                    cmd.Parameters.Add(new SqlParameter("@name", trainingProgram.Name));
+                    cmd.Parameters.Add(new SqlParameter("@budget", trainingProgram.Budget));
                    
                     int newId = (int)cmd.ExecuteScalar();
-                    department.Id = newId;
-                    return CreatedAtRoute("GetDepartment", new { id = newId }, department);
+                    trainingProgram.Id = newId;
+                    return CreatedAtRoute("GetTrainingProgram", new { id = newId }, trainingProgram);
+                }
+            }
+        }
+
+        // POST  -- Add employee to training program
+
+        [HttpPost]
+        public async Task<IActionResult> POST([FromBody] TrainingProgram trainingProgram)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                                        INSERT 
+                                        INTO TrainingProgram (Name, Budget)
+                                        OUTPUT INSERTED.Id
+                                        VALUES (@name, @budget)";
+                    cmd.Parameters.Add(new SqlParameter("@name", trainingProgram.Name));
+                    cmd.Parameters.Add(new SqlParameter("@budget", trainingProgram.Budget));
+
+                    int newId = (int)cmd.ExecuteScalar();
+                    trainingProgram.Id = newId;
+                    return CreatedAtRoute("GetTrainingProgram", new { id = newId }, trainingProgram);
                 }
             }
         }
 
 
-        // Update single department by id from database
+
+        // PUT -- Update single trainingProgram by id from database
+ 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PUT([FromRoute] int id, [FromBody] Department department)
+        public async Task<IActionResult> PUT([FromRoute] int id, [FromBody] TrainingProgram trainingProgram)
         {
             try
             {
@@ -142,13 +175,13 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
-                                            UPDATE Department
+                                            UPDATE TrainingProgram
                                             SET 
                                             Name = @name,
                                             Budget = @budget
                                             WHERE Id = @id";
-                        cmd.Parameters.Add(new SqlParameter("@name", department.Name));
-                        cmd.Parameters.Add(new SqlParameter("@budget", department.Budget));
+                        cmd.Parameters.Add(new SqlParameter("@name", trainingProgram.Name));
+                        cmd.Parameters.Add(new SqlParameter("@budget", trainingProgram.Budget));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         int rowsAffected = cmd.ExecuteNonQuery();
@@ -162,7 +195,7 @@ namespace BangazonAPI.Controllers
             }
             catch (Exception)
             {
-                if (!DepartmentExists(id))
+                if (!TrainingProgramExists(id))
                 {
                     return NotFound();
                 }
@@ -174,7 +207,9 @@ namespace BangazonAPI.Controllers
         }
 
 
-        //Delete department by id from database
+        //Delete trainingProgram by id from database
+        // DELETE -- Remove training program
+        // DELETE -- Remove employee from program
         [HttpDelete("{id}")]
         public async Task<IActionResult> DELETE([FromRoute] int id)
         {
@@ -186,7 +221,7 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"DELETE 
-                                            FROM Department
+                                            FROM TrainingProgram
                                             WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
@@ -201,7 +236,7 @@ namespace BangazonAPI.Controllers
             }
             catch (Exception)
             {
-                if (!DepartmentExists(id))
+                if (!TrainingProgramExists(id))
                 {
                     return NotFound();
                 }
@@ -213,8 +248,8 @@ namespace BangazonAPI.Controllers
         }
 
 
-        // Check to see if department exists by id in database
-        private bool DepartmentExists(int id)
+        // Check to see if trainingProgram exists by id in database
+        private bool TrainingProgramExists(int id)
         {
             using (SqlConnection conn = Connection)
             {
@@ -223,7 +258,7 @@ namespace BangazonAPI.Controllers
                 {
                     cmd.CommandText = @"
                         SELECT Id, Name, Budget
-                        FROM Department
+                        FROM TrainingProgram
                         WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
 
