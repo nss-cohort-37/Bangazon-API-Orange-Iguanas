@@ -1,23 +1,22 @@
-﻿using BangazonAPI.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using BangazonAPI.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace BangazonAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-
-    public class OrderController : ControllerBase
+    public class ProductTypeController : ControllerBase
     {
         private readonly IConfiguration _config;
 
-        public OrderController(IConfiguration config)
+        public ProductTypeController(IConfiguration config)
         {
             _config = config;
         }
@@ -30,6 +29,8 @@ namespace BangazonAPI.Controllers
             }
         }
 
+
+        // Get all productTypes from the database
         [HttpGet]
         public async Task<IActionResult> GET()
         {
@@ -39,34 +40,34 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                                        SELECT Id, CustomerId
-                                        FROM [Order]
+                                        SELECT Id, Name
+                                        FROM ProductType
                                         ";
 
                     SqlDataReader reader = cmd.ExecuteReader();
-                    var orders = new List<Order>();
+                    var productTypes = new List<ProductType>();
 
                     while (reader.Read())
                     {
-                        var order = new Order
+                        var productType = new ProductType
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId"))
+                            Name = reader.GetString(reader.GetOrdinal("Name"))
                         };
 
-                        orders.Add(order);
+                        productTypes.Add(productType);
                     }
                     reader.Close();
 
-                    return Ok(orders);
+                    return Ok(productTypes);
                 }
             }
         }
 
 
-
-        [HttpGet("{id}", Name = "GetOrder")]
-        public async Task<IActionResult> Get([FromRoute] int id)
+        // Get a single productType by Id from database
+        [HttpGet("{id}", Name = "GetProductType")]
+        public async Task<IActionResult> GET([FromRoute] int id)
         {
             using (SqlConnection conn = Connection)
             {
@@ -74,131 +75,38 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT
-                            Id, CustomerId,
-                            UserPaymentTypeId
-                        FROM [Order]
+                        SELECT Id, Name
+                        FROM ProductType
                         WHERE Id = @id";
+
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
-                    Order order = null;
+                    ProductType productType = null;
 
                     if (reader.Read())
                     {
-                        order = new Order
+                        productType = new ProductType
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
-                            UserPaymentTypeId = reader.GetInt32(reader.GetOrdinal("UserPaymentTypeId"))
-
-
+                            Name = reader.GetString(reader.GetOrdinal("Name"))
                         };
-                    }
-                    reader.Close();
+                        reader.Close();
 
-                    return Ok(order);
+                        return Ok(productType);
+                    }
+                    else
+                    {
+                        return NotFound();
+                    }
                 }
             }
         }
+
+
+        // Create productTypes and add them to database
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Order order
-            )
-        {
-            using (SqlConnection conn = Connection)
-            {
-                conn.Open();
-                using (SqlCommand cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = @"INSERT INTO Order (CustomerId, UserPaymentTypeId)
-                                        OUTPUT INSERTED.Id
-                                        VALUES (@customerId, @userPaymentTypeId)";
-                    cmd.Parameters.Add(new SqlParameter("@customerId", order.CustomerId));
-                    cmd.Parameters.Add(new SqlParameter("@userPaymentTypeId", order.UserPaymentTypeId));
-
-                    int newId = (int)cmd.ExecuteScalar();
-                    order.Id = newId;
-                    return CreatedAtRoute("GetOrder", new { id = newId }, order);
-                }
-            }
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Put([FromRoute] int id, [FromBody] Order order)
-        {
-            try
-            {
-                using (SqlConnection conn = Connection)
-                {
-                    conn.Open();
-                    using (SqlCommand cmd = conn.CreateCommand())
-                    {
-                        cmd.CommandText = @"UPDATE Order
-                                            SET CustomerId = @customerId,
-                                                UserPaymentTypeId = @customerPaymentTypeId
-                                            WHERE Id = @id";
-                        cmd.Parameters.Add(new SqlParameter("@customerId", order.CustomerId));
-                        cmd.Parameters.Add(new SqlParameter("@userPaymentTypeId", order.UserPaymentTypeId));
-                        cmd.Parameters.Add(new SqlParameter("@id", id));
-
-                        int rowsAffected = cmd.ExecuteNonQuery();
-                        if (rowsAffected > 0)
-                        {
-                            return new StatusCodeResult(StatusCodes.Status204NoContent);
-                        }
-                        throw new Exception("No rows affected");
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                if (!OrderExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete([FromRoute] int id)
-        {
-            try
-            {
-                using (SqlConnection conn = Connection)
-                {
-                    conn.Open();
-                    using (SqlCommand cmd = conn.CreateCommand())
-                    {
-                        cmd.CommandText = @"DELETE FROM Order WHERE Id = @id";
-                        cmd.Parameters.Add(new SqlParameter("@id", id));
-
-                        int rowsAffected = cmd.ExecuteNonQuery();
-                        if (rowsAffected > 0)
-                        {
-                            return new StatusCodeResult(StatusCodes.Status204NoContent);
-                        }
-                        throw new Exception("No rows affected");
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                if (!OrderExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-        }
-
-        private bool OrderExists(int id)
+        public async Task<IActionResult> POST([FromBody] ProductType productType)
         {
             using (SqlConnection conn = Connection)
             {
@@ -206,9 +114,117 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, CustomerId, CustomerPaymentTypeId
-                        FROM Order
+                                        INSERT 
+                                        INTO ProductType (Name)
+                                        OUTPUT INSERTED.Id
+                                        VALUES (@name)";
+
+                    cmd.Parameters.Add(new SqlParameter("@name", productType.Name));
+
+                    int newId = (int)cmd.ExecuteScalar();
+                    productType.Id = newId;
+                    return CreatedAtRoute("GetProductType", new { id = newId }, productType);
+                }
+            }
+        }
+
+
+        // Update single productType by id from database
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PUT([FromRoute] int id, [FromBody] ProductType productType)
+        {
+            try
+            {
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"
+                                            UPDATE ProductType
+                                            SET 
+                                            Name = @name
+                                            WHERE Id = @id";
+
+                        cmd.Parameters.Add(new SqlParameter("@name", productType.Name));
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                        int rowsAffected = cmd.ExecuteNonQuery();
+                        if (rowsAffected > 0)
+                        {
+                            return new StatusCodeResult(StatusCodes.Status204NoContent);
+                        }
+                        throw new Exception("No rows were effected");
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                if (!ProductTypeExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+
+        //Delete productType by id from database
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DELETE([FromRoute] int id)
+        {
+            try
+            {
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"DELETE 
+                                            FROM ProductType
+                                            WHERE Id = @id";
+
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                        int rowsAffected = cmd.ExecuteNonQuery();
+                        if (rowsAffected > 0)
+                        {
+                            return new StatusCodeResult(StatusCodes.Status204NoContent);
+                        }
+                        throw new Exception("No rows were affected");
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                if (!ProductTypeExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+
+        // Check to see if productType exists by id in database
+        private bool ProductTypeExists(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                        SELECT Id, Name
+                        FROM ProductType
                         WHERE Id = @id";
+
                     cmd.Parameters.Add(new SqlParameter("@id", id));
 
                     SqlDataReader reader = cmd.ExecuteReader();
