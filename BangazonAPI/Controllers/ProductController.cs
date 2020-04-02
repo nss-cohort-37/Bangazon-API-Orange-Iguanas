@@ -30,7 +30,9 @@ namespace BangazonAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] string q)
+        public async Task<IActionResult> Get(
+            [FromQuery] string q,
+            [FromQuery] string sortBy)
         {
             using (SqlConnection conn = Connection)
             {
@@ -45,6 +47,11 @@ namespace BangazonAPI.Controllers
                     {
                         cmd.CommandText += " AND Title Like @q ";
                         cmd.Parameters.Add(new SqlParameter("@q", "%" + q + "%"));
+                    }
+
+                    if (sortBy == "recent")
+                    {
+                        cmd.CommandText += " ORDER BY DateAdded Desc";
                     }
 
 
