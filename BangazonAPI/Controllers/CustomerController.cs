@@ -53,22 +53,26 @@ namespace BangazonAPI.Controllers
 
                     while (reader.Read())
                     {
-                        Customer customer = new Customer
+                        if (reader.GetBoolean(reader.GetOrdinal("Active")) == true)
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
-                            Active = reader.GetBoolean(reader.GetOrdinal("Active")),
-                            Address = reader.GetString(reader.GetOrdinal("Address")),
-                            City = reader.GetString(reader.GetOrdinal("City")),
-                            State = reader.GetString(reader.GetOrdinal("State")),
-                            Email = reader.GetString(reader.GetOrdinal("Email")),
-                            Phone = reader.GetString(reader.GetOrdinal("Phone"))
-                        };
+                            Customer customer = new Customer
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
+                                Active = reader.GetBoolean(reader.GetOrdinal("Active")),
+                                Address = reader.GetString(reader.GetOrdinal("Address")),
+                                City = reader.GetString(reader.GetOrdinal("City")),
+                                State = reader.GetString(reader.GetOrdinal("State")),
+                                Email = reader.GetString(reader.GetOrdinal("Email")),
+                                Phone = reader.GetString(reader.GetOrdinal("Phone"))
+                            };
 
-                        customers.Add(customer);
+                            customers.Add(customer);
+                        }
                     }
+
                     reader.Close();
 
                     return Ok(customers);
@@ -166,7 +170,7 @@ namespace BangazonAPI.Controllers
 
                     cmd.Parameters.Add(new SqlParameter("@firstName", customer.FirstName));
                     cmd.Parameters.Add(new SqlParameter("@lastName", customer.LastName));
-                    cmd.Parameters.Add(new SqlParameter("@createdDate", customer.CreatedDate));
+                    cmd.Parameters.Add(new SqlParameter("@createdDate", DateTime.Now));
                     cmd.Parameters.Add(new SqlParameter("@active", customer.Active));
                     cmd.Parameters.Add(new SqlParameter("@address", customer.Address));
                     cmd.Parameters.Add(new SqlParameter("@city", customer.City));
@@ -240,8 +244,11 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"DELETE FROM Customer WHERE Id = @id";
+                        cmd.CommandText = @"UPDATE Customer
+                                            SET Active = @active
+                                            WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@id", id));
+                        cmd.Parameters.Add(new SqlParameter("@active", false));
 
                         int rowsAffected = cmd.ExecuteNonQuery();
                         if (rowsAffected > 0)
