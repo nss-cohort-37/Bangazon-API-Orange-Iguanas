@@ -206,7 +206,7 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, CustomerId, CustomerPaymentTypeId
+                        SELECT Id, CustomerId, UserPaymentTypeId
                         FROM Order
                         WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
