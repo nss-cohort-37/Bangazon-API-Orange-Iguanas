@@ -12,11 +12,11 @@ namespace BangazonAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class DepartmentController : ControllerBase
+    public class ProductTypeController : ControllerBase
     {
         private readonly IConfiguration _config;
 
-        public DepartmentController(IConfiguration config)
+        public ProductTypeController(IConfiguration config)
         {
             _config = config;
         }
@@ -30,7 +30,7 @@ namespace BangazonAPI.Controllers
         }
 
 
-        // Get all departments from the database
+        // Get all productTypes from the database
         [HttpGet]
         public async Task<IActionResult> GET()
         {
@@ -40,34 +40,33 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                                        SELECT Id, Name, Budget
-                                        FROM Department
+                                        SELECT Id, Name
+                                        FROM ProductType
                                         ";
 
                     SqlDataReader reader = cmd.ExecuteReader();
-                    var departments = new List<Department>();
+                    var productTypes = new List<ProductType>();
 
                     while (reader.Read())
                     {
-                        var department = new Department
+                        var productType = new ProductType
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            Name = reader.GetString(reader.GetOrdinal("Name")),
-                            Budget = reader.GetInt32(reader.GetOrdinal("Budget"))
+                            Name = reader.GetString(reader.GetOrdinal("Name"))
                         };
 
-                        departments.Add(department);
+                        productTypes.Add(productType);
                     }
                     reader.Close();
 
-                    return Ok(departments);
+                    return Ok(productTypes);
                 }
             }
         }
 
 
-        // Get a single department by Id from database
-        [HttpGet("{id}", Name = "GetDepartment")]
+        // Get a single productType by Id from database
+        [HttpGet("{id}", Name = "GetProductType")]
         public async Task<IActionResult> GET([FromRoute] int id)
         {
             using (SqlConnection conn = Connection)
@@ -76,25 +75,25 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, Name, Budget
-                        FROM Department
+                        SELECT Id, Name
+                        FROM ProductType
                         WHERE Id = @id";
+
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
-                    Department department = null;
+                    ProductType productType = null;
 
                     if (reader.Read())
                     {
-                        department = new Department
+                        productType = new ProductType
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            Name = reader.GetString(reader.GetOrdinal("Name")),
-                            Budget = reader.GetInt32(reader.GetOrdinal("Budget"))
+                            Name = reader.GetString(reader.GetOrdinal("Name"))
                         };
                         reader.Close();
 
-                        return Ok(department);
+                        return Ok(productType);
                     }
                     else
                     {
@@ -105,9 +104,9 @@ namespace BangazonAPI.Controllers
         }
 
 
-        // Create departments and add them to database
+        // Create productTypes and add them to database
         [HttpPost]
-        public async Task<IActionResult> POST([FromBody] Department department)
+        public async Task<IActionResult> POST([FromBody] ProductType productType)
         {
             using (SqlConnection conn = Connection)
             {
@@ -116,23 +115,23 @@ namespace BangazonAPI.Controllers
                 {
                     cmd.CommandText = @"
                                         INSERT 
-                                        INTO Department (Name, Budget)
+                                        INTO ProductType (Name)
                                         OUTPUT INSERTED.Id
-                                        VALUES (@name, @budget)";
-                    cmd.Parameters.Add(new SqlParameter("@name", department.Name));
-                    cmd.Parameters.Add(new SqlParameter("@budget", department.Budget));
-                   
+                                        VALUES (@name)";
+
+                    cmd.Parameters.Add(new SqlParameter("@name", productType.Name));
+
                     int newId = (int)cmd.ExecuteScalar();
-                    department.Id = newId;
-                    return CreatedAtRoute("GetDepartment", new { id = newId }, department);
+                    productType.Id = newId;
+                    return CreatedAtRoute("GetProductType", new { id = newId }, productType);
                 }
             }
         }
 
 
-        // Update single department by id from database
+        // Update single productType by id from database
         [HttpPut("{id}")]
-        public async Task<IActionResult> PUT([FromRoute] int id, [FromBody] Department department)
+        public async Task<IActionResult> PUT([FromRoute] int id, [FromBody] ProductType productType)
         {
             try
             {
@@ -142,13 +141,12 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
-                                            UPDATE Department
+                                            UPDATE ProductType
                                             SET 
-                                            Name = @name,
-                                            Budget = @budget
+                                            Name = @name
                                             WHERE Id = @id";
-                        cmd.Parameters.Add(new SqlParameter("@name", department.Name));
-                        cmd.Parameters.Add(new SqlParameter("@budget", department.Budget));
+
+                        cmd.Parameters.Add(new SqlParameter("@name", productType.Name));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         int rowsAffected = cmd.ExecuteNonQuery();
@@ -162,7 +160,7 @@ namespace BangazonAPI.Controllers
             }
             catch (Exception)
             {
-                if (!DepartmentExists(id))
+                if (!ProductTypeExists(id))
                 {
                     return NotFound();
                 }
@@ -174,7 +172,7 @@ namespace BangazonAPI.Controllers
         }
 
 
-        //Delete department by id from database
+        //Delete productType by id from database
         [HttpDelete("{id}")]
         public async Task<IActionResult> DELETE([FromRoute] int id)
         {
@@ -186,8 +184,9 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"DELETE 
-                                            FROM Department
+                                            FROM ProductType
                                             WHERE Id = @id";
+
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         int rowsAffected = cmd.ExecuteNonQuery();
@@ -201,7 +200,7 @@ namespace BangazonAPI.Controllers
             }
             catch (Exception)
             {
-                if (!DepartmentExists(id))
+                if (!ProductTypeExists(id))
                 {
                     return NotFound();
                 }
@@ -213,8 +212,8 @@ namespace BangazonAPI.Controllers
         }
 
 
-        // Check to see if department exists by id in database
-        private bool DepartmentExists(int id)
+        // Check to see if productType exists by id in database
+        private bool ProductTypeExists(int id)
         {
             using (SqlConnection conn = Connection)
             {
@@ -222,9 +221,10 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, Name, Budget
-                        FROM Department
+                        SELECT Id, Name
+                        FROM ProductType
                         WHERE Id = @id";
+
                     cmd.Parameters.Add(new SqlParameter("@id", id));
 
                     SqlDataReader reader = cmd.ExecuteReader();
