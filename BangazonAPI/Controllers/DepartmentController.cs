@@ -53,7 +53,8 @@ namespace BangazonAPI.Controllers
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             Name = reader.GetString(reader.GetOrdinal("Name")),
-                            Budget = reader.GetInt32(reader.GetOrdinal("Budget"))
+                            Budget = reader.GetInt32(reader.GetOrdinal("Budget")),
+                            Employees = new List<Employee>()
                         };
 
                         departments.Add(department);
@@ -68,7 +69,10 @@ namespace BangazonAPI.Controllers
 
         // Get a single department by Id from database
         [HttpGet("{id}", Name = "GetDepartment")]
-        public async Task<IActionResult> GET([FromRoute] int id)
+        public async Task<IActionResult> GET(
+            [FromRoute] int id,
+            [FromQuery] string include
+            )
         {
             using (SqlConnection conn = Connection)
             {
@@ -76,30 +80,59 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, Name, Budget
-                        FROM Department
-                        WHERE Id = @id";
+                        SELECT d.Id, d.Name, d.Budget
+                       ";
+
+                    if (include == "employees")
+                    {
+                        cmd.CommandText += @", e.Id, e.FirstName, e.LastName, e.DepartmentId, e.Email, e.IsSupervisor, e.ComputerId
+                                           FROM Department d
+                                           LEFT JOIN Employee e
+                                           ON d.Id = e.DepartmentId
+                                           WHERE d.Id = @id
+                                           ";
+                    }
+
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     Department department = null;
 
-                    if (reader.Read())
+                    while (reader.Read())
                     {
-                        department = new Department
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            Name = reader.GetString(reader.GetOrdinal("Name")),
-                            Budget = reader.GetInt32(reader.GetOrdinal("Budget"))
-                        };
-                        reader.Close();
 
-                        return Ok(department);
+                        if (department == null)
+                        {
+                            department = new Department
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                Name = reader.GetString(reader.GetOrdinal("Name")),
+                                Budget = reader.GetInt32(reader.GetOrdinal("Budget")),
+                                Employees = new List<Employee>()
+                            };
+                        }
+
+                        if (include == "employees")
+                        {
+                            if (!reader.IsDBNull(reader.GetOrdinal("DepartmentId")))
+                            {
+                                department.Employees.Add(new Employee()
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                    LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                    DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
+                                    Email = reader.GetString(reader.GetOrdinal("Email")),
+                                    ComputerId = reader.GetInt32(reader.GetOrdinal("ComputerId")),
+                                    IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor"))
+                                });
+                            }
+                        }
+
                     }
-                    else
-                    {
-                        return NotFound();
-                    }
+                    reader.Close();
+
+                    return Ok(department);
                 }
             }
         }
@@ -118,10 +151,12 @@ namespace BangazonAPI.Controllers
                                         INSERT 
                                         INTO Department (Name, Budget)
                                         OUTPUT INSERTED.Id
-                                        VALUES (@name, @budget)";
+                                        VALUES (@name, @budget)
+                                        ";
+
                     cmd.Parameters.Add(new SqlParameter("@name", department.Name));
                     cmd.Parameters.Add(new SqlParameter("@budget", department.Budget));
-                   
+
                     int newId = (int)cmd.ExecuteScalar();
                     department.Id = newId;
                     return CreatedAtRoute("GetDepartment", new { id = newId }, department);
@@ -146,7 +181,9 @@ namespace BangazonAPI.Controllers
                                             SET 
                                             Name = @name,
                                             Budget = @budget
-                                            WHERE Id = @id";
+                                            WHERE Id = @id
+                                            ";
+
                         cmd.Parameters.Add(new SqlParameter("@name", department.Name));
                         cmd.Parameters.Add(new SqlParameter("@budget", department.Budget));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
@@ -185,9 +222,12 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"DELETE 
+                        cmd.CommandText = @"
+                                            DELETE 
                                             FROM Department
-                                            WHERE Id = @id";
+                                            WHERE Id = @id
+                                            ";
+
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         int rowsAffected = cmd.ExecuteNonQuery();
@@ -224,7 +264,9 @@ namespace BangazonAPI.Controllers
                     cmd.CommandText = @"
                         SELECT Id, Name, Budget
                         FROM Department
-                        WHERE Id = @id";
+                        WHERE Id = @id
+                        ";
+
                     cmd.Parameters.Add(new SqlParameter("@id", id));
 
                     SqlDataReader reader = cmd.ExecuteReader();

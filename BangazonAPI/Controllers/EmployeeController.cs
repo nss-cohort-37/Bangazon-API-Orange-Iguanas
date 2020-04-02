@@ -32,7 +32,10 @@ namespace BangazonAPI.Controllers
 
         // Get all employees from the database
         [HttpGet]
-        public async Task<IActionResult> GET()
+        public async Task<IActionResult> GET(
+            [FromQuery] string firstName,
+            [FromQuery] string lastName
+            )
         {
             using (SqlConnection conn = Connection)
             {
@@ -40,10 +43,22 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT e.Id, e.FirstName, e.LastName, e.DepartmentId, e.Email, e.IsSupervisor, e.ComputerId, d.Id, d.Name, d.Budget
-                        FROM Employee e
-                        LEFT JOIN Department d ON d.Id = e.DepartmentId"
-                    ;
+                        SELECT Id, FirstName, LastName, DepartmentId, Email, IsSupervisor, ComputerId
+                        FROM Employee
+                        WHERE 1 = 1   
+                        ";
+
+                    if (firstName != null)
+                    {
+                        cmd.CommandText += " AND FirstName LIKE @firstName";
+                        cmd.Parameters.Add(new SqlParameter("@firstName", "%" + firstName + "%"));
+                    }
+
+                    if (lastName != null)
+                    {
+                        cmd.CommandText += " AND LastName LIKE @lastName";
+                        cmd.Parameters.Add(new SqlParameter("@lastName", "%" + lastName + "%"));
+                    }
 
                     SqlDataReader reader = cmd.ExecuteReader();
                     var employees = new List<Employee>();
@@ -58,13 +73,7 @@ namespace BangazonAPI.Controllers
                             DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
                             Email = reader.GetString(reader.GetOrdinal("Email")),
                             IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
-                            ComputerId = reader.GetInt32(reader.GetOrdinal("ComputerId")),
-                            Department = new Department()
-                            {
-                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                Name = reader.GetString(reader.GetOrdinal("Name")),
-                                Budget = reader.GetInt32(reader.GetOrdinal("Budget"))
-                            }
+                            ComputerId = reader.GetInt32(reader.GetOrdinal("ComputerId"))
                         };
 
                         employees.Add(employee);
@@ -87,10 +96,12 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT e.Id, e.FirstName, e.LastName, e.DepartmentId, d.Name, d.Budget
+                        SELECT e.Id, e.FirstName, e.LastName, e.DepartmentId, e.Email, e.IsSupervisor, e.ComputerId, c.Id, c.PurchaseDate, c.DecomissionDate, c.Make, c.Model
                         FROM Employee e
-                        LEFT JOIN Department d ON d.Id = e.DepartmentId
+                        LEFT JOIN Computer c 
+                        ON c.Id = e.ComputerId
                         WHERE e.Id = @id";
+
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
@@ -104,13 +115,27 @@ namespace BangazonAPI.Controllers
                             FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
                             LastName = reader.GetString(reader.GetOrdinal("LastName")),
                             DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
-                            Department = new Department()
+                            Email = reader.GetString(reader.GetOrdinal("Email")),
+                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                            ComputerId = reader.GetInt32(reader.GetOrdinal("ComputerId")),
+                            Computer = new Computer()
                             {
                                 Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                Name = reader.GetString(reader.GetOrdinal("Name")),
-                                Budget = reader.GetInt32(reader.GetOrdinal("Budget"))
+                                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                                Make = reader.GetString(reader.GetOrdinal("Make")),
+                                Model = reader.GetString(reader.GetOrdinal("Model"))
                             }
                         };
+
+                        if (!reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
+                        {
+                            employee.Computer.DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate"));
+                        }
+                        else
+                        {
+                            employee.Computer.DecomissionDate = null;
+                        }
+
                         reader.Close();
 
                         return Ok(employee);
@@ -137,6 +162,7 @@ namespace BangazonAPI.Controllers
                                         INSERT INTO Employee (FirstName, LastName, DepartmentId, Email, IsSupervisor, ComputerId)
                                         OUTPUT INSERTED.Id
                                         VALUES (@firstName, @lastName, @departmentId, @email, @isSupervisor, @computerId)";
+
                     cmd.Parameters.Add(new SqlParameter("@firstName", employee.FirstName));
                     cmd.Parameters.Add(new SqlParameter("@lastName", employee.LastName));
                     cmd.Parameters.Add(new SqlParameter("@departmentId", employee.DepartmentId));
@@ -173,6 +199,7 @@ namespace BangazonAPI.Controllers
                                             IsSupervisor = @isSupervisor,
                                             ComputerId = @computerId
                                             WHERE Id = @id";
+
                         cmd.Parameters.Add(new SqlParameter("@firstName", employee.FirstName));
                         cmd.Parameters.Add(new SqlParameter("@lastName", employee.LastName));
                         cmd.Parameters.Add(new SqlParameter("@departmentId", employee.DepartmentId));
@@ -217,6 +244,7 @@ namespace BangazonAPI.Controllers
                     {
                         cmd.CommandText = @"DELETE FROM Employee
                                             WHERE Id = @id";
+
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         int rowsAffected = cmd.ExecuteNonQuery();
@@ -254,6 +282,7 @@ namespace BangazonAPI.Controllers
                         SELECT Id, FirstName, LastName, DepartmentId, Email, IsSupervisor, ComputerId
                         FROM Employee
                         WHERE Id = @id";
+
                     cmd.Parameters.Add(new SqlParameter("@id", id));
 
                     SqlDataReader reader = cmd.ExecuteReader();
