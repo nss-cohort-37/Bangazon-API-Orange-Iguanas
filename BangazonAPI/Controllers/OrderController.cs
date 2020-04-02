@@ -75,7 +75,8 @@ namespace BangazonAPI.Controllers
                 {
                     cmd.CommandText = @"
                         SELECT
-                            Id, CustomerId
+                            Id, CustomerId,
+                            UserPaymentTypeId
                         FROM [Order]
                         WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
@@ -88,9 +89,9 @@ namespace BangazonAPI.Controllers
                         order = new Order
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                        
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId"))
-                
+                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                            UserPaymentTypeId = reader.GetInt32(reader.GetOrdinal("UserPaymentTypeId"))
+
 
                         };
                     }
