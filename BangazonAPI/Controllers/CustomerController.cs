@@ -166,7 +166,7 @@ namespace BangazonAPI.Controllers
 
                     cmd.Parameters.Add(new SqlParameter("@firstName", customer.FirstName));
                     cmd.Parameters.Add(new SqlParameter("@lastName", customer.LastName));
-                    cmd.Parameters.Add(new SqlParameter("@createdDate", customer.CreatedDate));
+                    cmd.Parameters.Add(new SqlParameter("@createdDate", DateTime.Now.ToString("MM/dd/yyyy hh:mm tt")));
                     cmd.Parameters.Add(new SqlParameter("@active", customer.Active));
                     cmd.Parameters.Add(new SqlParameter("@address", customer.Address));
                     cmd.Parameters.Add(new SqlParameter("@city", customer.City));
