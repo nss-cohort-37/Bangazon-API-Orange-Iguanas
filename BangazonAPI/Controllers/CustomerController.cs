@@ -87,30 +87,63 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, FirstName, LastName, CreatedDate, Active, Address, City, State, Email, Phone 
-                        FROM Customer
-                        WHERE Id = @id";
+                        SELECT c.Id, c.FirstName, c.LastName, c.CreatedDate, c.Active, c.Address, c.City, c.State, c.Email, c.Phone";
+
+                    if (include == "products")
+                    {
+                        cmd.CommandText += ", p.Id, p.ProductTypeId, p.CustomerId, p.Price, p.Description, p.Title, p.DateAdded";
+                    }
+
+                    cmd.CommandText += @" FROM Customer c ";
+
+                    if (include == "products")
+                    {
+                        cmd.CommandText += "LEFT JOIN Product p ON p.CustomerId = c.Id ";
+                    }
+
+                    cmd.CommandText += " WHERE c.Id = @id";
 
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     Customer customer = null;
 
-                    if (reader.Read())
+                    while (reader.Read())
                     {
-                        customer = new Customer
+                        if (customer == null)
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
-                            Active = reader.GetBoolean(reader.GetOrdinal("Active")),
-                            Address = reader.GetString(reader.GetOrdinal("Address")),
-                            City = reader.GetString(reader.GetOrdinal("City")),
-                            State = reader.GetString(reader.GetOrdinal("State")),
-                            Email = reader.GetString(reader.GetOrdinal("Email")),
-                            Phone = reader.GetString(reader.GetOrdinal("Phone"))
-                        };
+                            customer = new Customer
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
+                                Active = reader.GetBoolean(reader.GetOrdinal("Active")),
+                                Address = reader.GetString(reader.GetOrdinal("Address")),
+                                City = reader.GetString(reader.GetOrdinal("City")),
+                                State = reader.GetString(reader.GetOrdinal("State")),
+                                Email = reader.GetString(reader.GetOrdinal("Email")),
+                                Phone = reader.GetString(reader.GetOrdinal("Phone")),
+                                Products = new List<Product>()
+                            };
+                        }
+
+                        if (include == "products")
+                        {
+                            if (!reader.IsDBNull(reader.GetOrdinal("CustomerId")))
+                            {
+                                customer.Products.Add(new Product()
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                    ProductTypeId = reader.GetInt32(reader.GetOrdinal("ProductTypeId")),
+                                    CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                                    Price = reader.GetDecimal(reader.GetOrdinal("Price")),
+                                    Description = reader.GetString(reader.GetOrdinal("Description")),
+                                    Title = reader.GetString(reader.GetOrdinal("Title")),
+                                    DateAdded = reader.GetDateTime(reader.GetOrdinal("DateAdded"))
+                                });
+                            }
+                        }
                     }
                     reader.Close();
 
