@@ -8,16 +8,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+
+
 namespace BangazonAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-
-    public class OrderController : ControllerBase
+    public class ComputerController : ControllerBase
     {
         private readonly IConfiguration _config;
 
-        public OrderController(IConfiguration config)
+        public ComputerController(IConfiguration config)
         {
             _config = config;
         }
@@ -39,33 +40,37 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                                        SELECT Id, CustomerId
-                                        FROM [Order]
+                                        SELECT Id, PurchaseDate,  Make, Model
+                                        FROM Computer
                                         ";
 
                     SqlDataReader reader = cmd.ExecuteReader();
-                    var orders = new List<Order>();
+                    var computers = new List<Computer>();
 
                     while (reader.Read())
                     {
-                        var order = new Order
+                        var computer = new Computer
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId"))
+                            PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                            //DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
+                            Make = reader.GetString(reader.GetOrdinal("Make")),
+                            Model = reader.GetString(reader.GetOrdinal("Model"))
+
                         };
 
-                        orders.Add(order);
+                        computers.Add(computer);
                     }
                     reader.Close();
 
-                    return Ok(orders);
+                    return Ok(computers);
                 }
             }
         }
 
 
 
-        [HttpGet("{id}", Name = "GetOrder")]
+        [HttpGet("{id}", Name = "GetComputer")]
         public async Task<IActionResult> Get([FromRoute] int id)
         {
             using (SqlConnection conn = Connection)
@@ -75,33 +80,36 @@ namespace BangazonAPI.Controllers
                 {
                     cmd.CommandText = @"
                         SELECT
-                            Id, CustomerId
-                        FROM [Order]
+                            Id, PurchaseDate,  Make, Model
+                        FROM Computer
                         WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
-                    Order order = null;
+                    Computer computer = null;
 
                     if (reader.Read())
                     {
-                        order = new Order
+                        computer = new Computer
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                        
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId"))
-                
+
+                            PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                           // DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
+                            Make = reader.GetString(reader.GetOrdinal("Make")),
+                            Model = reader.GetString(reader.GetOrdinal("Model"))
+
 
                         };
                     }
                     reader.Close();
 
-                    return Ok(order);
+                    return Ok(computer);
                 }
             }
         }
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Order order
+        public async Task<IActionResult> Post([FromBody] Computer computer
             )
         {
             using (SqlConnection conn = Connection)
@@ -109,21 +117,24 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO Order (CustomerId, UserPaymentTypeId)
+                    cmd.CommandText = @"INSERT INTO Computer (PurchaseDate,  Make, Model)
                                         OUTPUT INSERTED.Id
-                                        VALUES (@customerId, @userPaymentTypeId)";
-                    cmd.Parameters.Add(new SqlParameter("@customerId", order.CustomerId));
-                    cmd.Parameters.Add(new SqlParameter("@userPaymentTypeId", order.UserPaymentTypeId));
+                                        VALUES (@purchaseDate,  @make, @model)";
+                    cmd.Parameters.Add(new SqlParameter("@purchaseDate", computer.PurchaseDate));
+                   // cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
+                    cmd.Parameters.Add(new SqlParameter("@make", computer.Make));
+                    cmd.Parameters.Add(new SqlParameter("@model", computer.Model));
+
 
                     int newId = (int)cmd.ExecuteScalar();
-                    order.Id = newId;
-                    return CreatedAtRoute("GetOrder", new { id = newId }, order);
+                    computer.Id = newId;
+                    return CreatedAtRoute("GetComputer", new { id = newId }, computer);
                 }
             }
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put([FromRoute] int id, [FromBody] Order order)
+        public async Task<IActionResult> Put([FromRoute] int id, [FromBody] Computer computer)
         {
             try
             {
@@ -132,12 +143,16 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"UPDATE Order
-                                            SET CustomerId = @customerId,
-                                                UserPaymentTypeId = @customerPaymentTypeId
+                        cmd.CommandText = @"UPDATE Computer
+                                            SET PurchaseDate = @purchaseDate,
+                                           
+                                                Make = @make
+                                                Model = @model
                                             WHERE Id = @id";
-                        cmd.Parameters.Add(new SqlParameter("@customerId", order.CustomerId));
-                        cmd.Parameters.Add(new SqlParameter("@userPaymentTypeId", order.UserPaymentTypeId));
+                        cmd.Parameters.Add(new SqlParameter("@purchaseDate", computer.PurchaseDate));
+                       // cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
+                        cmd.Parameters.Add(new SqlParameter("@make", computer.Make));
+                        cmd.Parameters.Add(new SqlParameter("@model", computer.Model));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         int rowsAffected = cmd.ExecuteNonQuery();
@@ -151,7 +166,7 @@ namespace BangazonAPI.Controllers
             }
             catch (Exception)
             {
-                if (!OrderExists(id))
+                if (!ComputerExists(id))
                 {
                     return NotFound();
                 }
@@ -172,7 +187,7 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"DELETE FROM Order WHERE Id = @id";
+                        cmd.CommandText = @"DELETE FROM Computer WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         int rowsAffected = cmd.ExecuteNonQuery();
@@ -186,7 +201,7 @@ namespace BangazonAPI.Controllers
             }
             catch (Exception)
             {
-                if (!OrderExists(id))
+                if (!ComputerExists(id))
                 {
                     return NotFound();
                 }
@@ -197,7 +212,7 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        private bool OrderExists(int id)
+        private bool ComputerExists(int id)
         {
             using (SqlConnection conn = Connection)
             {
@@ -205,8 +220,8 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, CustomerId, CustomerPaymentTypeId
-                        FROM Order
+                        SELECT Id, PurchaseDate, DecomissionDate, Make, Model
+                        FROM Computer
                         WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
 
