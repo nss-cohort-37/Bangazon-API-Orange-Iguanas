@@ -40,7 +40,7 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                                        SELECT Id, PurchaseDate,  Make, Model
+                                        SELECT Id, PurchaseDate, DecomissionDate, Make, Model
                                         FROM Computer
                                         ";
 
@@ -53,12 +53,15 @@ namespace BangazonAPI.Controllers
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
-                            //DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
+                  
                             Make = reader.GetString(reader.GetOrdinal("Make")),
                             Model = reader.GetString(reader.GetOrdinal("Model"))
 
                         };
-
+                        if (!reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
+                        {
+                            computer.DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate"));
+                        }
                         computers.Add(computer);
                     }
                     reader.Close();
@@ -71,7 +74,7 @@ namespace BangazonAPI.Controllers
 
 
         [HttpGet("{id}", Name = "GetComputer")]
-        public async Task<IActionResult> Get([FromRoute] int id)
+        public async Task<IActionResult> Get([FromRoute] int id, [FromQuery] string include)
         {
             using (SqlConnection conn = Connection)
             {
@@ -80,9 +83,10 @@ namespace BangazonAPI.Controllers
                 {
                     cmd.CommandText = @"
                         SELECT
-                            Id, PurchaseDate,  Make, Model
+                            Id, PurchaseDate, DecomissionDate, Make, Model
                         FROM Computer
                         WHERE Id = @id";
+
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
@@ -95,7 +99,7 @@ namespace BangazonAPI.Controllers
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
 
                             PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
-                           // DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
+                            DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
                             Make = reader.GetString(reader.GetOrdinal("Make")),
                             Model = reader.GetString(reader.GetOrdinal("Model"))
 
@@ -117,11 +121,11 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO Computer (PurchaseDate,  Make, Model)
+                    cmd.CommandText = @"INSERT INTO Computer (PurchaseDate, DecomissionDate Make, Model)
                                         OUTPUT INSERTED.Id
                                         VALUES (@purchaseDate,  @make, @model)";
                     cmd.Parameters.Add(new SqlParameter("@purchaseDate", computer.PurchaseDate));
-                   // cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
+                    cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
                     cmd.Parameters.Add(new SqlParameter("@make", computer.Make));
                     cmd.Parameters.Add(new SqlParameter("@model", computer.Model));
 
@@ -145,12 +149,13 @@ namespace BangazonAPI.Controllers
                     {
                         cmd.CommandText = @"UPDATE Computer
                                             SET PurchaseDate = @purchaseDate,
+                                                DecomissionDate = @decomissionDate
                                            
                                                 Make = @make
                                                 Model = @model
                                             WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@purchaseDate", computer.PurchaseDate));
-                       // cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
+                        cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
                         cmd.Parameters.Add(new SqlParameter("@make", computer.Make));
                         cmd.Parameters.Add(new SqlParameter("@model", computer.Model));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
