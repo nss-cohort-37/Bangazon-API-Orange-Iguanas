@@ -32,7 +32,9 @@ namespace BangazonAPI.Controllers
 
         // Get all userPaymentTypes from the database
         [HttpGet]
-        public async Task<IActionResult> GET()
+        public async Task<IActionResult> GET(
+            [FromQuery] int? customerId
+            )
         {
             using (SqlConnection conn = Connection)
             {
@@ -42,7 +44,15 @@ namespace BangazonAPI.Controllers
                     cmd.CommandText = @"
                                         SELECT Id, AcctNumber, Active, CustomerId, PaymentTypeId
                                         FROM UserPaymentType
+                                        WHERE 1 = 1
                                         ";
+
+                    if (customerId != null)
+                    {
+                        cmd.CommandText += " AND CustomerId LIKE @customerId";
+                        cmd.Parameters.Add(new SqlParameter("@customerId", customerId));
+                    };
+
 
                     SqlDataReader reader = cmd.ExecuteReader();
                     var userPaymentTypes = new List<UserPaymentType>();
@@ -198,11 +208,12 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"DELETE 
-                                            FROM UserPaymentType
+                        cmd.CommandText = @"UPDATE UserPaymentType
+                                            SET Active = @false
                                             WHERE Id = @id";
 
                         cmd.Parameters.Add(new SqlParameter("@id", id));
+                        cmd.Parameters.Add(new SqlParameter("@false", false));
 
                         int rowsAffected = cmd.ExecuteNonQuery();
                         if (rowsAffected > 0)
