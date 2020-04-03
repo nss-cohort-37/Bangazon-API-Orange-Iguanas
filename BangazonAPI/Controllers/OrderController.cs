@@ -31,8 +31,10 @@ namespace BangazonAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GET()
+        public async Task<IActionResult> GET(
+             [FromQuery] string customerId)
         {
+            
             using (SqlConnection conn = Connection)
             {
                 conn.Open();

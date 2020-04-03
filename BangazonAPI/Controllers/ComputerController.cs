@@ -33,7 +33,7 @@ namespace BangazonAPI.Controllers
 
         [HttpGet]
         public async Task<IActionResult> Get(
-           [FromQuery] string available)
+                  [FromQuery] string available)
         {
             if (available != "true" && available != "false")
             {
@@ -252,23 +252,23 @@ namespace BangazonAPI.Controllers
             }
         }
 
+
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Computer computer
-            )
+        public async Task<IActionResult> Post([FromBody] Computer computer)
         {
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO Computer (PurchaseDate, DecomissionDate Make, Model)
+
+                    cmd.CommandText = @"INSERT INTO Computer (PurchaseDate, Make, Model)
                                         OUTPUT INSERTED.Id
-                                        VALUES (@purchaseDate,  @make, @model)";
+                                        VALUES (@purchaseDate, @make, @model)";
                     cmd.Parameters.Add(new SqlParameter("@purchaseDate", computer.PurchaseDate));
-                    cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
+                    //cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
                     cmd.Parameters.Add(new SqlParameter("@make", computer.Make));
                     cmd.Parameters.Add(new SqlParameter("@model", computer.Model));
-
 
                     int newId = (int)cmd.ExecuteScalar();
                     computer.Id = newId;
@@ -276,6 +276,8 @@ namespace BangazonAPI.Controllers
                 }
             }
         }
+
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Put([FromRoute] int id, [FromBody] Computer computer)
@@ -288,14 +290,20 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"UPDATE Computer
-                                            SET PurchaseDate = @purchaseDate,
-                                                DecomissionDate = @decomissionDate
-                                           
-                                                Make = @make
-                                                Model = @model
+                                            SET PurchaseDate = @purchaseDate, DecomissionDate = @decomissionDate, Make = @make, Model = @model
                                             WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@purchaseDate", computer.PurchaseDate));
-                        cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
+
+                        if (computer.DecomissionDate == null)
+                        {
+
+                            cmd.Parameters.Add(new SqlParameter("@decomissionDate", DBNull.Value));
+                        }
+                        else
+                        {
+                            cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
+                        }
+
                         cmd.Parameters.Add(new SqlParameter("@make", computer.Make));
                         cmd.Parameters.Add(new SqlParameter("@model", computer.Model));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
@@ -321,7 +329,6 @@ namespace BangazonAPI.Controllers
                 }
             }
         }
-
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
