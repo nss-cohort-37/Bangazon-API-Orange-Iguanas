@@ -249,7 +249,7 @@ namespace BangazonAPI.Controllers
                     cmd.CommandText = @"INSERT INTO Computer (PurchaseDate, Make, Model)
                                         OUTPUT INSERTED.Id
                                         VALUES (@purchaseDate, @make, @model)";
-                    cmd.Parameters.Add(new SqlParameter("@purchaseDate", DateTime.Now.ToString("MM/dd/yyyy hh:mm tt")));
+                    cmd.Parameters.Add(new SqlParameter("@purchaseDate", computer.PurchaseDate));
                     //cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
                     cmd.Parameters.Add(new SqlParameter("@make", computer.Make));
                     cmd.Parameters.Add(new SqlParameter("@model", computer.Model));
