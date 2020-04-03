@@ -32,7 +32,7 @@ namespace BangazonAPI.Controllers
         
 
 
-        // GET all upcomming trainingPrograms from the database
+        // GET all upcomming trainingPrograms from the database !!WORKING
 
         [HttpGet]
         public async Task<IActionResult> GET()
@@ -73,7 +73,7 @@ namespace BangazonAPI.Controllers
         }
 
 
-        // GET a single trainingProgram by Id from database
+        // GET a single trainingProgram by Id from database !!WORKING
 
         [HttpGet("{id}", Name = "GetTrainingProgram")]
         public async Task<IActionResult> Get([FromRoute] int id)
@@ -137,7 +137,7 @@ namespace BangazonAPI.Controllers
         }
 
 
-        // POST  -- Add training program to database
+        // POST  -- Add training program to database !!WORKING
 
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] TrainingProgram trainingProgram)
@@ -162,7 +162,7 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        // POST  -- Add employee to training program
+        // POST  -- Add employee to training program !!NOT WORKING
 
         [HttpPost]
         [Route("{id}/employees")]
@@ -188,7 +188,7 @@ namespace BangazonAPI.Controllers
         
 
 
-        // PUT -- Update single trainingProgram by id from database
+        // PUT -- Update single trainingProgram by id from database  !!NOT WORKING
 
         [HttpPut("{id}")]
         public async Task<IActionResult> PUT([FromRoute] int id, [FromBody] TrainingProgram trainingProgram)
@@ -201,7 +201,7 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
-                                            UPDATE TrainingProgramS
+                                            UPDATE TrainingProgram
                                             SET 
                                             Name = @name,
                                             StartDate = @startDate,
