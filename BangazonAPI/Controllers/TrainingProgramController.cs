@@ -110,7 +110,7 @@ namespace BangazonAPI.Controllers
                             };
                         }
 
-                        if (!reader.IsDBNull(reader.GetOrdinal("ProductId")))
+                        if (!reader.IsDBNull(reader.GetOrdinal("EmployeeId")))
                         {
                             Employee employeeToAdd = new Employee()
                             {
@@ -122,11 +122,11 @@ namespace BangazonAPI.Controllers
                                 IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor"))
                             };
 
-                            if (!reader.IsDBNull(reader.GetOrdinal("ComputerId")))
-                            {
-                                employeeToAdd.ComputerId = reader.GetInt32(reader.GetOrdinal("ComputerId"));
-                            }
-                            trainingProgram.Employees.Add(employeeToAdd);
+                            //if (!reader.IsDBNull(reader.GetOrdinal("ComputerId")))
+                            //{
+                            //    employeeToAdd.ComputerId = reader.GetInt32(reader.GetOrdinal("ComputerId"));
+                            //}
+                            //trainingProgram.Employees.Add(employeeToAdd);
                         }
 
                     }
@@ -201,7 +201,7 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
-                                            UPDATE TrainingProgram
+                                            UPDATE TrainingProgramS
                                             SET 
                                             Name = @name,
                                             StartDate = @startDate,
@@ -286,8 +286,7 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, Name, Budget
-                        FROM TrainingProgram
+                        SELECT Id, Name, StartDate, EndDate, MaxAttendees FROM TrainingProgram
                         WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
 
@@ -298,8 +297,10 @@ namespace BangazonAPI.Controllers
         }
 
         // DELETE -- Remove employee from trainingProgram
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete([FromRoute] int id)
+        [HttpDelete("{id}/employees/{employeeId}")]
+        [Route("{id}/employees/{employeeId}")]
+
+        public async Task<IActionResult> DeleteEmployeeFromProgram([FromRoute] int id, [FromRoute] int employeeId)
         {
             try
             {
@@ -308,17 +309,16 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"DELETE 
-                                            FROM TrainingProgram
-                                            WHERE Id = @id";
+                        cmd.CommandText = @"DELETE FROM EmployeeTraining WHERE TrainingProgramId = @id AND EmployeeId = @employeeId";
                         cmd.Parameters.Add(new SqlParameter("@id", id));
+                        cmd.Parameters.Add(new SqlParameter("@employeeId", employeeId));
 
                         int rowsAffected = cmd.ExecuteNonQuery();
                         if (rowsAffected > 0)
                         {
                             return new StatusCodeResult(StatusCodes.Status204NoContent);
                         }
-                        throw new Exception("No rows were affected");
+                        throw new Exception("No rows affected");
                     }
                 }
             }
