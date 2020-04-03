@@ -73,7 +73,7 @@ namespace BangazonAPI.Controllers
         }
 
 
-        // GET a single trainingProgram by Id from database !!WORKING
+        // GET a single trainingProgram by Id from database, and display employees associated with trainingProgram !!WORKING
 
         [HttpGet("{id}", Name = "GetTrainingProgram")]
         public async Task<IActionResult> Get([FromRoute] int id)
@@ -162,7 +162,7 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        // POST  -- Add employee to training program !!NOT WORKING
+        // POST  -- Add employee to training program !!WORKING
 
         [HttpPost]
         [Route("{id}/employees")]
@@ -189,7 +189,7 @@ namespace BangazonAPI.Controllers
 
 
 
-        // PUT -- Update single trainingProgram by id from database  !!NOT WORKING
+        // PUT -- Update single trainingProgram by id from database  !!WORKING
 
         [HttpPut("{id}")]
         public async Task<IActionResult> PUT([FromRoute] int id, [FromBody] TrainingProgram trainingProgram)
@@ -207,13 +207,13 @@ namespace BangazonAPI.Controllers
                                             Name = @name,
                                             StartDate = @startDate,
                                             EndDate = @endDate,
-                                            MaxAttendees = @maxAttendees,
+                                            MaxAttendees = @maxAttendees
                                             WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@name", trainingProgram.Name));
                         cmd.Parameters.Add(new SqlParameter("@startDate", trainingProgram.StartDate));
                         cmd.Parameters.Add(new SqlParameter("@endDate", trainingProgram.EndDate));
-                        cmd.Parameters.Add(new SqlParameter("@startDate", trainingProgram.StartDate));
                         cmd.Parameters.Add(new SqlParameter("@maxAttendees", trainingProgram.MaxAttendees));
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         int rowsAffected = cmd.ExecuteNonQuery();
                         if (rowsAffected > 0)
@@ -332,27 +332,6 @@ namespace BangazonAPI.Controllers
                 else
                 {
                     throw;
-                }
-            }
-        }
-
-
-        // Check to see if trainingProgram exists by id in database
-        private bool EmployeeTPExists(int id)
-        {
-            using (SqlConnection conn = Connection)
-            {
-                conn.Open();
-                using (SqlCommand cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = @"
-                        SELECT Id, Name, Budget
-                        FROM TrainingProgram
-                        WHERE Id = @id";
-                    cmd.Parameters.Add(new SqlParameter("@id", id));
-
-                    SqlDataReader reader = cmd.ExecuteReader();
-                    return reader.Read();
                 }
             }
         }
