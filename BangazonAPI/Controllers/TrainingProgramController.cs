@@ -122,11 +122,11 @@ namespace BangazonAPI.Controllers
                                 IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor"))
                             };
 
-                            //if (!reader.IsDBNull(reader.GetOrdinal("ComputerId")))
-                            //{
-                            //    employeeToAdd.ComputerId = reader.GetInt32(reader.GetOrdinal("ComputerId"));
-                            //}
-                            //trainingProgram.Employees.Add(employeeToAdd);
+                            if (!reader.IsDBNull(reader.GetOrdinal("EmployeeTrainingId")))
+                            {
+                                employeeToAdd.Id = reader.GetInt32(reader.GetOrdinal("EmployeeId"));
+                            }
+                            trainingProgram.Employees.Add(employeeToAdd);
                         }
 
                     }
@@ -175,17 +175,18 @@ namespace BangazonAPI.Controllers
                 {
                     cmd.CommandText = @"INSERT INTO EmployeeTraining (EmployeeId, TrainingProgramId)
                                         OUTPUT INSERTED.Id
-                                        VALUES (@employeeId, @trainingProgramID)";
+                                        VALUES (@employeeId, @trainingProgramId)";
                     cmd.Parameters.Add(new SqlParameter("@employeeId", employee.Id));
-                    cmd.Parameters.Add(new SqlParameter("@trainingProgramID", id));
+                    cmd.Parameters.Add(new SqlParameter("@trainingProgramId", id));
 
                     cmd.ExecuteNonQuery();
                     return RedirectToRoute("GetTrainingProgram", new { id = id });
                 }
             }
         }
-
         
+
+
 
 
         // PUT -- Update single trainingProgram by id from database  !!NOT WORKING
@@ -237,7 +238,7 @@ namespace BangazonAPI.Controllers
         }
 
 
-        // DELETE -- Remove training program from database
+        // DELETE -- Remove training program from database !!WORKING
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DELETE([FromRoute] int id)
