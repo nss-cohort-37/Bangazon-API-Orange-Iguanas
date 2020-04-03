@@ -59,16 +59,21 @@ namespace BangazonAPI.Controllers
 
                     while (reader.Read())
                     {
-                        var userPaymentType = new UserPaymentType
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            AcctNumber = reader.GetString(reader.GetOrdinal("AcctNumber")),
-                            Active = reader.GetBoolean(reader.GetOrdinal("Active")),
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
-                            PaymentTypeId = reader.GetInt32(reader.GetOrdinal("PaymentTypeId"))
-                        };
 
-                        userPaymentTypes.Add(userPaymentType);
+                        if (reader.GetBoolean(reader.GetOrdinal("Active")) == true)
+                        {
+                            var userPaymentType = new UserPaymentType
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                AcctNumber = reader.GetString(reader.GetOrdinal("AcctNumber")),
+                                Active = reader.GetBoolean(reader.GetOrdinal("Active")),
+                                CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                                PaymentTypeId = reader.GetInt32(reader.GetOrdinal("PaymentTypeId"))
+                            };
+
+                            userPaymentTypes.Add(userPaymentType);
+                        }
+
                     }
                     reader.Close();
 
