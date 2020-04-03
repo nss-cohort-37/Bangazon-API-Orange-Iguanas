@@ -80,18 +80,12 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT d.Id, d.Name, d.Budget
+                        SELECT d.Id, d.Name, d.Budget, e.Id, e.FirstName, e.LastName, e.DepartmentId, e.Email, e.IsSupervisor, e.ComputerId
+                        FROM Department d
+                        LEFT JOIN Employee e
+                        ON d.Id = e.DepartmentId
+                        WHERE d.Id = @id
                        ";
-
-                    if (include == "employees")
-                    {
-                        cmd.CommandText += @", e.Id, e.FirstName, e.LastName, e.DepartmentId, e.Email, e.IsSupervisor, e.ComputerId
-                                           FROM Department d
-                                           LEFT JOIN Employee e
-                                           ON d.Id = e.DepartmentId
-                                           WHERE d.Id = @id
-                                           ";
-                    }
 
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
@@ -112,9 +106,9 @@ namespace BangazonAPI.Controllers
                             };
                         }
 
-                        if (include == "employees")
+                        if (!reader.IsDBNull(reader.GetOrdinal("DepartmentId")))
                         {
-                            if (!reader.IsDBNull(reader.GetOrdinal("DepartmentId")))
+                            if (include == "employees")
                             {
                                 department.Employees.Add(new Employee()
                                 {

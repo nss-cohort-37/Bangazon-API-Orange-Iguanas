@@ -36,7 +36,7 @@ namespace BangazonAPI
                 options.AddPolicy(MyAllowSpecificOrigins,
                 builder =>
                 {
-                    builder.WithOrigins("http://localhost:3000").AllowAnyHeader().AllowAnyMethod();
+                    builder.WithOrigins("http://bangazon.com").AllowAnyHeader().AllowAnyMethod();
                 });
             });
 
