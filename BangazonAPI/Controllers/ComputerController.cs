@@ -32,7 +32,27 @@ namespace BangazonAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GET()
+        public async Task<IActionResult> Get(
+                  [FromQuery] string available)
+        {
+            if (available != "true" && available != "false")
+            {
+                var computers = GetAllComputers(available);
+                return Ok(computers);
+            }
+            else if (available == "true")
+            {
+                var computers = GetAllAvailableComputers(available);
+                return Ok(computers);
+            }
+            else
+            {
+                var computers = GetAllUnAvailableComputers(available);
+                return Ok(computers);
+
+            }
+        }
+        private List<Computer> GetAllAvailableComputers([FromQuery] string available)
         {
             using (SqlConnection conn = Connection)
             {
@@ -40,38 +60,95 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                                        SELECT Id, PurchaseDate,  Make, Model
-                                        FROM Computer
-                                        ";
+                     SELECT c.Id, c.PurchaseDate, c.DecomissionDate, c.Make, c.Model, e.ComputerId
+                    FROM Computer c
+                    LEFT JOIN Employee e
+                    ON e.ComputerId = c.Id";
+
 
                     SqlDataReader reader = cmd.ExecuteReader();
-                    var computers = new List<Computer>();
+
+                    List<Computer> computers = new List<Computer>();
 
                     while (reader.Read())
                     {
-                        var computer = new Computer
+                        if (reader.IsDBNull(reader.GetOrdinal("ComputerId")))
+                        {
+
+                            Computer computer = new Computer
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                                Make = reader.GetString(reader.GetOrdinal("Make")),
+                                Model = reader.GetString(reader.GetOrdinal("Model"))
+
+                            };
+
+                            if (!reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
+                            {
+                                computer.DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate"));
+                            }
+                            else
+                            {
+                                computer.DecomissionDate = null;
+                            }
+
+
+                            computers.Add(computer);
+                        }
+                    }
+                    reader.Close();
+
+                    return computers;
+                }
+            }
+        }
+        private List<Computer> GetAllUnAvailableComputers([FromQuery] string available)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                     SELECT c.Id, c.PurchaseDate, c.DecomissionDate, c.Make, c.Model
+                    FROM Computer c
+                    INNER JOIN Employee e
+                    ON e.ComputerId = c.Id";
+
+
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    List<Computer> computers = new List<Computer>();
+
+                    while (reader.Read())
+                    {
+                        Computer computer = new Computer
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
-                            //DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
                             Make = reader.GetString(reader.GetOrdinal("Make")),
                             Model = reader.GetString(reader.GetOrdinal("Model"))
 
                         };
 
+                        if (!reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
+                        {
+                            computer.DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate"));
+                        }
+                        else
+                        {
+                            computer.DecomissionDate = null;
+                        }
                         computers.Add(computer);
                     }
                     reader.Close();
 
-                    return Ok(computers);
+                    return computers;
                 }
             }
         }
-
-
-
-        [HttpGet("{id}", Name = "GetComputer")]
-        public async Task<IActionResult> Get([FromRoute] int id)
+        private List<Computer> GetAllComputers([FromQuery] string available)
         {
             using (SqlConnection conn = Connection)
             {
@@ -79,11 +156,56 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT
-                            Id, PurchaseDate,  Make, Model
-                        FROM Computer
-                        WHERE Id = @id";
-                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    SELECT c.Id, c.PurchaseDate, c.DecomissionDate, c.Make, c.Model
+                    FROM Computer c ";
+
+
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    List<Computer> computers = new List<Computer>();
+
+                    while (reader.Read())
+                    {
+                        Computer computer = new Computer
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                            Make = reader.GetString(reader.GetOrdinal("Make")),
+                            Model = reader.GetString(reader.GetOrdinal("Model"))
+
+                        };
+
+                        if (!reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
+                        {
+                            computer.DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate"));
+                        }
+                        else
+                        {
+                            computer.DecomissionDate = null;
+                        }
+                        computers.Add(computer);
+                    }
+                    reader.Close();
+
+                    return computers;
+                }
+            }
+        }
+
+        [HttpGet("{id}", Name = "GetComputer")]
+        public async Task<IActionResult> Get([FromRoute] int Id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                    SELECT c.Id, c.PurchaseDate, c.DecomissionDate, c.Make, c.Model
+                    FROM Computer c 
+                    WHERE c.Id = @id";
+
+                    cmd.Parameters.Add(new SqlParameter("@id", Id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     Computer computer = null;
@@ -93,14 +215,19 @@ namespace BangazonAPI.Controllers
                         computer = new Computer
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-
                             PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
-                           // DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
                             Make = reader.GetString(reader.GetOrdinal("Make")),
                             Model = reader.GetString(reader.GetOrdinal("Model"))
 
-
                         };
+                        if (!reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
+                        {
+                            computer.DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate"));
+                        }
+                        else
+                        {
+                            computer.DecomissionDate = null;
+                        }
                     }
                     reader.Close();
 
@@ -108,23 +235,24 @@ namespace BangazonAPI.Controllers
                 }
             }
         }
+
+
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Computer computer
-            )
+        public async Task<IActionResult> Post([FromBody] Computer computer)
         {
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO Computer (PurchaseDate,  Make, Model)
+
+                    cmd.CommandText = @"INSERT INTO Computer (PurchaseDate, Make, Model)
                                         OUTPUT INSERTED.Id
-                                        VALUES (@purchaseDate,  @make, @model)";
+                                        VALUES (@purchaseDate, @make, @model)";
                     cmd.Parameters.Add(new SqlParameter("@purchaseDate", computer.PurchaseDate));
-                   // cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
+                    //cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
                     cmd.Parameters.Add(new SqlParameter("@make", computer.Make));
                     cmd.Parameters.Add(new SqlParameter("@model", computer.Model));
-
 
                     int newId = (int)cmd.ExecuteScalar();
                     computer.Id = newId;
@@ -132,6 +260,8 @@ namespace BangazonAPI.Controllers
                 }
             }
         }
+
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Put([FromRoute] int id, [FromBody] Computer computer)
@@ -144,13 +274,20 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"UPDATE Computer
-                                            SET PurchaseDate = @purchaseDate,
-                                           
-                                                Make = @make
-                                                Model = @model
+                                            SET PurchaseDate = @purchaseDate, DecomissionDate = @decomissionDate, Make = @make, Model = @model
                                             WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@purchaseDate", computer.PurchaseDate));
-                       // cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
+
+                        if (computer.DecomissionDate == null)
+                        {
+
+                            cmd.Parameters.Add(new SqlParameter("@decomissionDate", DBNull.Value));
+                        }
+                        else
+                        {
+                            cmd.Parameters.Add(new SqlParameter("@decomissionDate", computer.DecomissionDate));
+                        }
+
                         cmd.Parameters.Add(new SqlParameter("@make", computer.Make));
                         cmd.Parameters.Add(new SqlParameter("@model", computer.Model));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
@@ -176,7 +313,6 @@ namespace BangazonAPI.Controllers
                 }
             }
         }
-
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
