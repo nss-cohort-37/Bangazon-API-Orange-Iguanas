@@ -67,7 +67,10 @@ namespace BangazonAPI.Controllers
 
         // Get a single productType by Id from database
         [HttpGet("{id}", Name = "GetProductType")]
-        public async Task<IActionResult> GET([FromRoute] int id)
+        public async Task<IActionResult> GET(
+            [FromRoute] int id,
+            [FromQuery] string include
+            )
         {
             using (SqlConnection conn = Connection)
             {
@@ -75,30 +78,52 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, Name
-                        FROM ProductType
-                        WHERE Id = @id";
+                        SELECT prodType.Id, prodType.Name, p.Id AS ProductId, p.DateAdded, p.ProductTypeId, p.CustomerId, p.Price, p.Title, p.Description
+                        FROM ProductType prodType
+                        LEFT JOIN Product p
+                        ON p.ProductTypeId = prodType.Id
+                        WHERE prodType.Id = @id";
 
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     ProductType productType = null;
 
-                    if (reader.Read())
+                    while (reader.Read())
                     {
-                        productType = new ProductType
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            Name = reader.GetString(reader.GetOrdinal("Name"))
-                        };
-                        reader.Close();
 
-                        return Ok(productType);
+                        if (productType == null)
+                        {
+                            productType = new ProductType
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                Name = reader.GetString(reader.GetOrdinal("Name")),
+                                Products = new List<Product>()
+                            };
+                        }
+
+                        if (!reader.IsDBNull(reader.GetOrdinal("ProductId")))
+                        {
+
+                            if (include == "products")
+                            {
+                                productType.Products.Add(new Product()
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("ProductId")),
+                                    DateAdded = reader.GetDateTime(reader.GetOrdinal("DateAdded")),
+                                    ProductTypeId = reader.GetInt32(reader.GetOrdinal("ProductTypeId")),
+                                    CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                                    Price = reader.GetDecimal(reader.GetOrdinal("Price")),
+                                    Title = reader.GetString(reader.GetOrdinal("Title")),
+                                    Description = reader.GetString(reader.GetOrdinal("Description"))
+                                });
+                            }
+                        }
+
                     }
-                    else
-                    {
-                        return NotFound();
-                    }
+                    reader.Close();
+
+                    return Ok(productType);
                 }
             }
         }
