@@ -34,7 +34,7 @@ namespace BangazonAPI.Controllers
         public async Task<IActionResult> GET(
              [FromQuery] string customerId)
         {
-            
+
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
@@ -75,34 +75,66 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
+                   
                     cmd.CommandText = @"
-                        SELECT
-                            Id, CustomerId,
-                            UserPaymentTypeId
-                        FROM [Order]
-                        WHERE Id = @id";
+                            SELECT
+                                 o.Id, o.CustomerId,
+                                 o.UserPaymentTypeId, p.Title, p.DateAdded, p.[Description], p.Id, p.Price, p.ProductTypeId
+                            FROM
+                            [Order] o
+                            LEFT JOIN
+                            Product p
+                            ON p.CustomerId = o.CustomerId
+                            WHERE o.CustomerId = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     Order order = null;
 
                     if (reader.Read())
+
                     {
-                        order = new Order
+                      
+                            order = new Order
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+           
+                                Products = new List<Product>()
+                           };
+                        if (!reader.IsDBNull(reader.GetOrdinal("UserPaymentTypeId")))
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
-                            UserPaymentTypeId = reader.GetInt32(reader.GetOrdinal("UserPaymentTypeId"))
+                            order.UserPaymentTypeId = reader.GetInt32(reader.GetOrdinal("UserPaymentTypeId"));
+                        }
+                        else
+                        {
+                            order.UserPaymentTypeId = null;
+                        }
+                      
+                        if (!reader.IsDBNull(reader.GetOrdinal("CustomerId")))
+                        {
+                            order.Products.Add(new Product()
+                            {
+
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                                DateAdded = reader.GetDateTime(reader.GetOrdinal("DateAdded")),
+                                ProductTypeId = reader.GetInt32(reader.GetOrdinal("ProductTypeId")),
+                                Price = reader.GetDecimal(reader.GetOrdinal("Price")),
+                                Title = reader.GetString(reader.GetOrdinal("Title")),
+                                Description = reader.GetString(reader.GetOrdinal("Description"))
 
 
-                        };
+                            });
+                        }
                     }
                     reader.Close();
-
                     return Ok(order);
-                }
+                }             
             }
         }
+    
+
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] Order order
             )
