@@ -31,8 +31,10 @@ namespace BangazonAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GET()
+        public async Task<IActionResult> GET(
+             [FromQuery] string customerId)
         {
+            
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
@@ -206,7 +208,7 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, CustomerId, CustomerPaymentTypeId
+                        SELECT Id, CustomerId, UserPaymentTypeId
                         FROM Order
                         WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
