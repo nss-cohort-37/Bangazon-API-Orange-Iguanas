@@ -357,6 +357,10 @@ namespace BangazonAPI.Controllers
                 {
                     return NotFound();
                 }
+                else if (EmployeeIsAssigned(id))
+                {
+                    return new StatusCodeResult(StatusCodes.Status403Forbidden);
+                }
                 else
                 {
                     throw;
@@ -375,6 +379,25 @@ namespace BangazonAPI.Controllers
                         SELECT Id, PurchaseDate, DecomissionDate, Make, Model
                         FROM Computer
                         WHERE Id = @id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    return reader.Read();
+                }
+            }
+        }
+
+        private bool EmployeeIsAssigned(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                        SELECT Id, PurchaseDate, DecomissionDate, Make, Model
+                        FROM Computer
+                        WHERE Id = @id AND Id IN (SELECT ComputerId FROM Employee)";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
 
                     SqlDataReader reader = cmd.ExecuteReader();
