@@ -32,7 +32,8 @@ namespace BangazonAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Get(
             [FromQuery] string q,
-            [FromQuery] string sortBy)
+            [FromQuery] string sortBy,
+            [FromQuery] string asc)
         {
             using (SqlConnection conn = Connection)
             {
@@ -52,6 +53,26 @@ namespace BangazonAPI.Controllers
                     if (sortBy == "recent")
                     {
                         cmd.CommandText += " ORDER BY DateAdded Desc";
+                    }
+
+                    if (sortBy == "price" & asc == "true")
+                    {
+                        cmd.CommandText += " ORDER BY Price Asc";
+                    }
+
+                    if (sortBy == "price" & asc == "false")
+                    {
+                        cmd.CommandText += " ORDER BY Price Desc";
+                    }
+
+                    if (sortBy == "popularity")
+                    {
+                        cmd.CommandText = @"SELECT p.Id, p.DateAdded, p.ProductTypeId, p.CustomerId, p.Price, p.Title, p.[Description], Count(p.Id) AS Count
+                            FROM Product P
+                            LEFT JOIN OrderProduct op
+                            ON op.ProductId = p.Id
+                            GROUP BY p.Id, p.DateAdded, p.ProductTypeId, p.CustomerId, p.Price, p.Title, p.[Description]
+                            ORDER BY Count Desc";
                     }
 
 
