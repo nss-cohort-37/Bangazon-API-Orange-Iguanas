@@ -74,27 +74,33 @@ namespace BangazonAPI.Controllers
                     {
                         if (reader.IsDBNull(reader.GetOrdinal("ComputerId")))
                         {
-
-                            Computer computer = new Computer
+                            // Chain another if statement that makes sure ONLY computers with null decomission dates are displaying
+                            if (reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
                             {
-                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
-                                Make = reader.GetString(reader.GetOrdinal("Make")),
-                                Model = reader.GetString(reader.GetOrdinal("Model"))
 
-                            };
+                                Computer computer = new Computer
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                    PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                                    Make = reader.GetString(reader.GetOrdinal("Make")),
+                                    Model = reader.GetString(reader.GetOrdinal("Model"))
 
-                            if (!reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
-                            {
-                                computer.DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate"));
-                            }
-                            else
-                            {
-                                computer.DecomissionDate = null;
-                            }
+                                };
 
+                            //Don't need this shit
+
+                            //if (!reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
+                            //{
+                            //    computer.DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate"));
+                            //}
+                            //else
+                            //{
+                            //    computer.DecomissionDate = null;
+                            //}
 
                             computers.Add(computer);
+
+                            }
                         }
                     }
                     reader.Close();
@@ -111,10 +117,13 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                     SELECT c.Id, c.PurchaseDate, c.DecomissionDate, c.Make, c.Model
+                     SELECT c.Id, c.PurchaseDate, c.DecomissionDate, c.Make, c.Model, e.ComputerId
                     FROM Computer c
-                    INNER JOIN Employee e
+                    LEFT JOIN Employee e
                     ON e.ComputerId = c.Id";
+
+                    // INNER JOIN Employee e
+                    // ^^^ Don't use this since it doesn't capture the decomissioned computers with no employee assigned
 
 
                     SqlDataReader reader = cmd.ExecuteReader();
@@ -123,24 +132,31 @@ namespace BangazonAPI.Controllers
 
                     while (reader.Read())
                     {
-                        Computer computer = new Computer
+                        // Use an IF statement to get all computers currently assigned to an employee OR!!!! to get all computers with NO employee assigned AND with a decomission date
+                        if (!reader.IsDBNull(reader.GetOrdinal("ComputerId")) || reader.IsDBNull(reader.GetOrdinal("ComputerId")) && !reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
-                            Make = reader.GetString(reader.GetOrdinal("Make")),
-                            Model = reader.GetString(reader.GetOrdinal("Model"))
+                            Computer computer = new Computer
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                                Make = reader.GetString(reader.GetOrdinal("Make")),
+                                Model = reader.GetString(reader.GetOrdinal("Model"))
+                            };
 
-                        };
 
-                        if (!reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
-                        {
-                            computer.DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate"));
+                            // Don't need this shit
+                            //if (!reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
+                            //{
+                            //    computer.DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate"));
+                            //}
+                            //else
+                            //{
+                            //    computer.DecomissionDate = null;
+                            //}
+
+                            computers.Add(computer);
                         }
-                        else
-                        {
-                            computer.DecomissionDate = null;
-                        }
-                        computers.Add(computer);
+
                     }
                     reader.Close();
 
