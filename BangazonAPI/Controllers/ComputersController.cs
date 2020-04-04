@@ -1,4 +1,4 @@
-﻿using BangazonAPI.Models;
+﻿    using BangazonAPI.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -14,11 +14,11 @@ namespace BangazonAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ComputerController : ControllerBase
+    public class ComputersController : ControllerBase
     {
         private readonly IConfiguration _config;
 
-        public ComputerController(IConfiguration config)
+        public ComputersController(IConfiguration config)
         {
             _config = config;
         }

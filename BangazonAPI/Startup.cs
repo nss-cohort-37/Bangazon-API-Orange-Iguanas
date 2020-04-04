@@ -37,7 +37,7 @@ namespace BangazonAPI
                 options.AddPolicy(MyAllowSpecificOrigins,
                 builder =>
                 {
-                    builder.WithOrigins("http://bangazon.com").AllowAnyHeader().AllowAnyMethod();
+                    builder.WithOrigins("https://bangazonclient.web.app").AllowAnyHeader().AllowAnyMethod();
                 });
             });
 

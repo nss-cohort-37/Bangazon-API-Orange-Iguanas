@@ -12,11 +12,11 @@ namespace BangazonAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class EmployeeController : ControllerBase
+    public class EmployeesController : ControllerBase
     {
         private readonly IConfiguration _config;
 
-        public EmployeeController(IConfiguration config)
+        public EmployeesController(IConfiguration config)
         {
             _config = config;
         }
@@ -130,10 +130,6 @@ namespace BangazonAPI.Controllers
                         if (!reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
                         {
                             employee.Computer.DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate"));
-                        }
-                        else
-                        {
-                            employee.Computer.DecomissionDate = null;
                         }
 
                         reader.Close();
