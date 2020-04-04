@@ -202,7 +202,7 @@ namespace BangazonAPI.Controllers
         }
 
 
-        //Delete productType by id from database
+        //Soft delete productType by id from database
         [HttpDelete("{id}")]
         public async Task<IActionResult> DELETE([FromRoute] int id)
         {

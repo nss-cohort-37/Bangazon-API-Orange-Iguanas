@@ -131,10 +131,6 @@ namespace BangazonAPI.Controllers
                         {
                             employee.Computer.DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate"));
                         }
-                        else
-                        {
-                            employee.Computer.DecomissionDate = null;
-                        }
 
                         reader.Close();
 
