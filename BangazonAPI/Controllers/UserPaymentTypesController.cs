@@ -12,11 +12,11 @@ namespace BangazonAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserPaymentTypeController : ControllerBase
+    public class UserPaymentTypesController : ControllerBase
     {
         private readonly IConfiguration _config;
 
-        public UserPaymentTypeController(IConfiguration config)
+        public UserPaymentTypesController(IConfiguration config)
         {
             _config = config;
         }
