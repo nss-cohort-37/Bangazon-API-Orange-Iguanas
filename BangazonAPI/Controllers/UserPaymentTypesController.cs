@@ -12,11 +12,11 @@ namespace BangazonAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserPaymentTypeController : ControllerBase
+    public class UserPaymentTypesController : ControllerBase
     {
         private readonly IConfiguration _config;
 
-        public UserPaymentTypeController(IConfiguration config)
+        public UserPaymentTypesController(IConfiguration config)
         {
             _config = config;
         }
@@ -59,16 +59,21 @@ namespace BangazonAPI.Controllers
 
                     while (reader.Read())
                     {
-                        var userPaymentType = new UserPaymentType
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            AcctNumber = reader.GetString(reader.GetOrdinal("AcctNumber")),
-                            Active = reader.GetBoolean(reader.GetOrdinal("Active")),
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
-                            PaymentTypeId = reader.GetInt32(reader.GetOrdinal("PaymentTypeId"))
-                        };
 
-                        userPaymentTypes.Add(userPaymentType);
+                        if (reader.GetBoolean(reader.GetOrdinal("Active")) == true)
+                        {
+                            var userPaymentType = new UserPaymentType
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                AcctNumber = reader.GetString(reader.GetOrdinal("AcctNumber")),
+                                Active = reader.GetBoolean(reader.GetOrdinal("Active")),
+                                CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                                PaymentTypeId = reader.GetInt32(reader.GetOrdinal("PaymentTypeId"))
+                            };
+
+                            userPaymentTypes.Add(userPaymentType);
+                        }
+
                     }
                     reader.Close();
 
@@ -197,7 +202,7 @@ namespace BangazonAPI.Controllers
         }
 
 
-        //Delete productType by id from database
+        //Soft delete productType by id from database
         [HttpDelete("{id}")]
         public async Task<IActionResult> DELETE([FromRoute] int id)
         {
