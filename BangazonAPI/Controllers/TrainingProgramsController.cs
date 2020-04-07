@@ -305,10 +305,6 @@ namespace BangazonAPI.Controllers
 
         // DELETE -- Remove employee from trainingProgram
         [HttpDelete("{id}/employees/{employeeId}")]
-<<<<<<< HEAD
-
-=======
->>>>>>> master
         public async Task<IActionResult> DeleteEmployeeFromProgram([FromRoute] int id, [FromRoute] int employeeId)
         {
             try
