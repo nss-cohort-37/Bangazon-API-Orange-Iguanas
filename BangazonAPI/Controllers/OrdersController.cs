@@ -30,45 +30,45 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GET(
-             [FromQuery] string customerId)
-        {
+        //[HttpGet]
+        //public async Task<IActionResult> GET(
+        //     [FromQuery] string customerId)
+        //{
+            
+        //    using (SqlConnection conn = Connection)
+        //    {
+        //        conn.Open();
+        //        using (SqlCommand cmd = conn.CreateCommand())
+        //        {
+        //            cmd.CommandText = @"
+        //                                SELECT Id, CustomerId
+        //                                FROM [Order]
+        //                                ";
 
-            using (SqlConnection conn = Connection)
-            {
-                conn.Open();
-                using (SqlCommand cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = @"
-                                        SELECT Id, CustomerId
-                                        FROM [Order]
-                                        ";
+        //            SqlDataReader reader = cmd.ExecuteReader();
+        //            var orders = new List<Order>();
 
-                    SqlDataReader reader = cmd.ExecuteReader();
-                    var orders = new List<Order>();
+        //            while (reader.Read())
+        //            {
+        //                var order = new Order
+        //                {
+        //                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+        //                    CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId"))
+        //                };
 
-                    while (reader.Read())
-                    {
-                        var order = new Order
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId"))
-                        };
+        //                orders.Add(order);
+        //            }
+        //            reader.Close();
 
-                        orders.Add(order);
-                    }
-                    reader.Close();
-
-                    return Ok(orders);
-                }
-            }
-        }
+        //            return Ok(orders);
+        //        }
+        //    }
+        //}
 
 
 
         [HttpGet("{id}", Name = "GetOrder")]
-        public async Task<IActionResult> Get([FromRoute] int id)
+        public async Task<IActionResult> GetOrderById([FromRoute] int id)
         {
             using (SqlConnection conn = Connection)
             {
@@ -77,63 +77,53 @@ namespace BangazonAPI.Controllers
                 {
                    
                     cmd.CommandText = @"
-                            SELECT
-                                 o.Id, o.CustomerId,
-                                 o.UserPaymentTypeId, p.Title, p.DateAdded, p.[Description], p.Id, p.Price, p.ProductTypeId
-                            FROM
-                            [Order] o
-                            LEFT JOIN
-                            Product p
-                            ON p.CustomerId = o.CustomerId
-                            WHERE o.CustomerId = @id";
+                        SELECT
+                            o.Id, o.CustomerId, o.UserPaymentTypeId,
+                            op.Id, op.OrderId, op.ProductId,
+                            p.Id AS ProductId, p.DateAdded, p.ProductTypeId, p.CustomerId, p.Price,  p.Title, p.Description
+                        FROM [Order] o
+                        LEFT JOIN OrderProduct op ON o.Id = op.OrderId
+                        LEFT JOIN Product p ON op.ProductId = p.Id
+                        WHERE o.Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     Order order = null;
 
-                    if (reader.Read())
-
+                    while (reader.Read())
                     {
-                      
-                            order = new Order
+                        if (order == null)
+                        {
+                            order = new Order()
                             {
                                 Id = reader.GetInt32(reader.GetOrdinal("Id")),
                                 CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
-           
                                 Products = new List<Product>()
-                           };
-                        if (!reader.IsDBNull(reader.GetOrdinal("UserPaymentTypeId")))
-                        {
-                            order.UserPaymentTypeId = reader.GetInt32(reader.GetOrdinal("UserPaymentTypeId"));
-                        }
-                        else
-                        {
-                            order.UserPaymentTypeId = null;
-                        }
-                      
-                        if (!reader.IsDBNull(reader.GetOrdinal("CustomerId")))
-                        {
-                            order.Products.Add(new Product()
+                            };
+                            if (!reader.IsDBNull(reader.GetOrdinal("UserPaymentTypeId")))
                             {
-
-                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
-                                DateAdded = reader.GetDateTime(reader.GetOrdinal("DateAdded")),
-                                ProductTypeId = reader.GetInt32(reader.GetOrdinal("ProductTypeId")),
-                                Price = reader.GetDecimal(reader.GetOrdinal("Price")),
-                                Title = reader.GetString(reader.GetOrdinal("Title")),
-                                Description = reader.GetString(reader.GetOrdinal("Description"))
-
-
-                            });
+                                order.UserPaymentTypeId = reader.GetInt32(reader.GetOrdinal("UserPaymentTypeId"));
+                            }
                         }
+
+                        order.Products.Add(new Product()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("ProductId")),
+                            DateAdded = reader.GetDateTime(reader.GetOrdinal("DateAdded")),
+                            ProductTypeId = reader.GetInt32(reader.GetOrdinal("ProductTypeId")),
+                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                            Price = reader.GetDecimal(reader.GetOrdinal("Price")),
+                            Title = reader.GetString(reader.GetOrdinal("Title")),
+                            Description = reader.GetString(reader.GetOrdinal("Description"))
+                        });
+
                     }
+
                     reader.Close();
                     return Ok(order);
                 }             
             }
         }
-    
 
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] Order order

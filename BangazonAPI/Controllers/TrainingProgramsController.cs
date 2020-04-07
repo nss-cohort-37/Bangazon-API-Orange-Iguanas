@@ -46,6 +46,7 @@ namespace BangazonAPI.Controllers
                                         SELECT Id, Name, StartDate, EndDate, MaxAttendees
                                         FROM TrainingProgram
                                         WHERE 1=1
+                                        AND StartDate >= GETDATE()
                                         ";
 
                     SqlDataReader reader = cmd.ExecuteReader();
@@ -147,17 +148,22 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO TrainingProgram (Name, StartDate, EndDate, MaxAttendees)
+                    if (trainingProgram.StartDate > DateTime.Now && trainingProgram.EndDate > trainingProgram.StartDate )
+                    {
+                        cmd.CommandText = @"INSERT INTO TrainingProgram (Name, StartDate, EndDate, MaxAttendees)
                                         OUTPUT INSERTED.Id
                                         VALUES (@name, @startDate, @endDate, @maxAttendees)";
-                    cmd.Parameters.Add(new SqlParameter("@name", trainingProgram.Name));
-                    cmd.Parameters.Add(new SqlParameter("@startDate", trainingProgram.StartDate));
-                    cmd.Parameters.Add(new SqlParameter("@endDate", trainingProgram.EndDate));
-                    cmd.Parameters.Add(new SqlParameter("@maxAttendees", trainingProgram.MaxAttendees));
+                        cmd.Parameters.Add(new SqlParameter("@name", trainingProgram.Name));
+                        cmd.Parameters.Add(new SqlParameter("@startDate", trainingProgram.StartDate));
+                        cmd.Parameters.Add(new SqlParameter("@endDate", trainingProgram.EndDate));
+                        cmd.Parameters.Add(new SqlParameter("@maxAttendees", trainingProgram.MaxAttendees)); 
 
+                    }
+                    
                     int newId = (int)cmd.ExecuteScalar();
                     trainingProgram.Id = newId;
                     return CreatedAtRoute("GetTrainingProgram", new { id = newId }, trainingProgram);
+
                 }
             }
         }
